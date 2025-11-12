@@ -1,0 +1,26 @@
+{
+    "module_name": "xcase",
+    "maintainer": "ohshitgorillas",
+    "license": "MIT",
+    "features": {
+        "process_record": true
+    },
+    "keycodes": [
+        {
+            "key": "XCASE_SNAKE",
+            "aliases": ["XC_SNK"]
+        },
+        {
+            "key": "XCASE_KEBAB",
+            "aliases": ["XC_KBB"]
+        },
+        {
+            "key": "XCASE_CAMEL",
+            "aliases": ["XC_CML"]
+        },
+        {
+            "key": "XCASE_OFF",
+            "aliases": ["XC_OFF"]
+        }
+    ]
+}
