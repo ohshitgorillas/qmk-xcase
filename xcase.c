@@ -52,7 +52,7 @@ bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
             case XCASE_KEBAB:
                 enable_xcase_with(KC_MINS);
                 return false; // Keycode handled
-        case XCASE_CAMEL:
+            case XCASE_CAMEL:
                 enable_xcase_with(OS_LSFT);
                 return false; // Keycode handled
             case XCASE_OFF:
