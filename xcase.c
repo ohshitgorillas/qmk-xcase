@@ -6,10 +6,12 @@
 
 #include "deferred_exec.h"
 
+// private variables
 static bool xcase_active = false;
 static uint16_t xcase_delimiter = KC_UNDS;
 static uint16_t last_keycode = KC_NO;
 
+// public functions
 void enable_xcase_with(uint16_t delimiter) {
     xcase_active = true;
     last_keycode = KC_NO;
@@ -27,15 +29,19 @@ void enable_xcase_with(uint16_t delimiter) {
     }
 }
 
+
 void disable_xcase(void) {
     xcase_active = false;
     last_keycode = KC_NO;
 }
 
+
 bool is_xcase_active(void) {
     return xcase_active;
 }
 
+
+// main function
 bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
     // Handle activation/deactivation keycodes first
     if (record->event.pressed) {
