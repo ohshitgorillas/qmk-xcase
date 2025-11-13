@@ -49,20 +49,20 @@ Add the following keycodes to your layout in `keymap.c`:
 - `XCASE_OFF` [alias `XC_OFF`]: Deactivates xcase mode.
 
 ### Custom triggers (advanced)
-Call `enable_xcase_with(KC_<delimiter>)` from your keymap to activate the mode. This can be done via the Leader key (e.g., Leader + S, C for snake_case), custom keycodes, or other means.
+Call `enable_xcase_with(KC_<delimiter>)` from your keymap to activate the mode. This can be done via the Leader key (e.g., Leader, S, C for snake_case), custom keycodes, or other means.
 
 Leader key example:
 ```c
 void leader_end_user(void) {
-  // Leader + S, C for snake_case
+  // Leader, S, C for snake_case
   if (leader_sequence_two_keys(KC_S, KC_C)) {
     enable_xcase_with(KC_UNDS);
   }
-  // Leader + K, C for kebab-case
+  // Leader, K, C for kebab-case
   else if (leader_sequence_two_keys(KC_K, KC_C)) {
     enable_xcase_with(KC_MINS);
   }
-  // Leader + C, C for camelCase
+  // Leader, C, C for camelCase
   else if (leader_sequence_two_keys(KC_C, KC_C)) {
     enable_xcase_with(OS_LSFT);
   }
