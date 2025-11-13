@@ -110,15 +110,18 @@
          // Editing keys
          case KC_BSPC:
          case KC_DEL:
+         // navigation keys
          case KC_LEFT:
          case KC_RIGHT:
+         case KC_UP:
+         case KC_DOWN:
          // Shift keys
          case KC_LSFT:
          case KC_RSFT:
          case OS_LSFT:
          case OS_RSFT:
          // misc
-         case KC_ALGR:
+         case KC_ALGR: // alt gr
              last_keycode = base_keycode;
              return true;
 
