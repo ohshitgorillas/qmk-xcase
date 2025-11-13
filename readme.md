@@ -71,6 +71,39 @@ void leader_end_user(void) {
 For camelCase, you may pass KC_LSFT, KC_RSFT, OS_LSFT, or OS_RSFT. They all resolve to a one-shot left shift.
 
 
+### Dynamic Delimiters
+This module may be used in conjunction with the Leader key to program dynamic, on-the—fly delimiters such as `:` or `.`.
+
+In the example below, users may enter Leader, `x`, `c`, followed by any character to use that character as a delimiter.
+```c
+extern uint16_t leader_sequence[]; 
+
+void leader_end_user(void) {
+  ...
+  else if ( // dynamic delimiters
+    leader_sequence[0] == KC_X &&
+    leader_sequence[1] == KC_C) {
+
+        // Get the third key in the sequence
+        uint16_t third_key = leader_sequence[2];
+        switch (third_key) {
+            case KC_LSFT:  // if shift is the third key,
+            case KC_RSFT:  // do not allow it to trigger xcase directly
+            case OS_LSFT:  // that would just enable camelCase
+            case OS_RSFT:  // we want the shifted version of the fourth key
+            case SC_SENT:  // NOT shift itself
+                delimiter = LSFT(leader_sequence[3]);  // the shifted fourth key is the intended delimiter
+                break;
+            default:
+                delimiter = third_key;
+                break;
+        }
+        enable_xcase_with(delimiter);  // enable xcase with the dynamic delimiter
+    }
+}
+```
+
+
 ### Exiting xcase
 The mode will terminate in one of two ways:
 1. Press any key that is not on the "allowed" list. The allowed keys are:
@@ -108,11 +141,11 @@ To add keys to the list of keys that won't trigger the end of xcase, locate the 
         case OS_LSFT:
         case OS_RSFT:
         // misc
-        case KC_ALGR:
+        case KC_ALGR:  // alt gr
             last_keycode = base_keycode;
             return true;
         
-        // Delimiter key (dynamic)
+        // exclude the delimiter key itself from ending xcase
         default:
             if (base_keycode == xcase_delimiter) {
                 last_keycode = base_keycode;
@@ -124,14 +157,17 @@ To add keys to the list of keys that won't trigger the end of xcase, locate the 
     }
 ```
 
-If you want to keep xcase going after, for example, apostrophes and quotes, add `KC_QUOT` to the list of exceptions:
-
+If you want to keep xcase going after, for example, apostrophes and quotes, add `KC_QUOT` and `KC_DQUO` to the list of exceptions:
 ```c
     // Check if this key should continue xcase mode
     switch (base_keycode) {
         // ... other cases ...
-        case KC_QUOT:  // <--- add this to exclude ' or " from ending xcase
-        case KC_ALGR:
+        case OS_RSFT:
+        // user-specified exceptions
+        case KC_QUOT:  // <--- add this to exclude ' from ending xcase
+        case KC_DQUO:  // <--- add this to exclude " from ending xcase
+        // misc
+        case KC_ALGR:  // alt gr
             last_keycode = base_keycode;
             return true;
         
