@@ -1,15 +1,15 @@
-/* Simple X-Case implementation
+/* Simple xcase implementation
 * Replaces spaces with delimiters for snake_case, kebab-case, camelCase
 */
 
 #include "xcase.h"
 
-#include "deferred_exec.h"
 
 // private variables
 static bool xcase_active = false;
 static uint16_t xcase_delimiter = KC_UNDS;
 static uint16_t last_keycode = KC_NO;
+
 
 // public functions
 void enable_xcase_with(uint16_t delimiter) {
