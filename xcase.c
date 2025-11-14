@@ -122,7 +122,8 @@ bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
             case OS_LSFT:
             case OS_RSFT:
             // misc
-            case KC_ALGR: // alt gr
+            case KC_LOPT:  // for macOS, Opt keys are used to make symbols
+            case KC_ALGR:  // AltGr key used to make intl characters
                 last_keycode = base_keycode;
                 return true;
 
