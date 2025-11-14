@@ -21,7 +21,7 @@ void enable_xcase_with(uint16_t delimiter) {
         case KC_RSFT:
         case OS_LSFT:
         case OS_RSFT:
-            xcase_delimiter = OS_LSFT;  // simplify shift to OS_LSFT for camelCase
+            xcase_delimiter = KC_LSFT;  // simplify shift to KC_LSFT for camelCase
             break;
         default:
             xcase_delimiter = delimiter;  // use the provided delimiter directly
@@ -53,7 +53,7 @@ bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
                 enable_xcase_with(KC_MINS);
                 return false; // Keycode handled
             case XCASE_CAMEL:
-                enable_xcase_with(OS_LSFT);
+                enable_xcase_with(KC_LSFT);
                 return false; // Keycode handled
             case XCASE_OFF:
                 disable_xcase();
@@ -79,7 +79,7 @@ bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
         if (base_keycode == KC_SPC) {
             // check for double space to exit xcase mode
             if (last_keycode == KC_SPC) {
-                if (xcase_delimiter != OS_LSFT) {
+                if (xcase_delimiter != KC_LSFT) {
                     tap_code(KC_BSPC); // remove the trailing delimiter for non-camelCase
                 }
                 disable_xcase();
@@ -87,8 +87,8 @@ bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
             }
 
             // replace space with delimiter
-            if (xcase_delimiter == OS_LSFT) {
-                add_oneshot_mods(MOD_BIT(KC_LSFT));  // add one-shot shift for camelCase
+            if (xcase_delimiter == KC_LSFT) {
+                add_oneshot_mods(MOD_BIT(xcase_delimiter));  // add one-shot shift for camelCase
             } else {
                 tap_code16(xcase_delimiter);  // send the delimiter
             }
