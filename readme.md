@@ -72,19 +72,18 @@ For camelCase, you may pass KC_LSFT, KC_RSFT, OS_LSFT, or OS_RSFT. They all reso
 
 
 ### Dynamic Delimiters
-This module may be used in conjunction with the Leader key to program dynamic, on-the—fly delimiters such as `:` or `.`.
+This module may be used in conjunction with the Leader key to program dynamic, on-the—fly delimiters such as `.` or `/`.
 
 In the example below, users may enter Leader, `x`, `c`, followed by any character to use that character as a delimiter.
 ```c
 extern uint16_t leader_sequence[]; 
 
 void leader_end_user(void) {
-  ...
-  else if ( // dynamic delimiters
-    leader_sequence[0] == KC_X &&
-    leader_sequence[1] == KC_C) {
+    if ( // dynamic delimiters
+        leader_sequence[0] == KC_X &&
+        leader_sequence[1] == KC_C) {
 
-        // Get the third key in the sequence
+        // Get the next keycode in the sequence
         uint16_t third_key = leader_sequence[2];
         switch (third_key) {
             case KC_LSFT:  // if shift is the third key,
@@ -106,74 +105,25 @@ void leader_end_user(void) {
 
 ### Exiting xcase
 The mode will terminate in one of two ways:
-1. Press any key that is not on the "allowed" list. The allowed keys are:
-    a. Alphanumeric (A-Z, 0-9)
-    b. Either shift (including one-shots)
-    c. Backspace or Delete
-    d. Underscore or Minus (including numpad minus)
-    e. The delimiter itself (if not listed above)
+1. Press any key that is not on the "excluded" list. The excluded keys are:
+    - Alphanumeric (A-Z, 0-9)
+    - Either Shift (including one-shots)
+    - Either Alt/Opt (for use as Opt in macOS)
+    - Backspace or Delete
+    - Arrow keys
+    - Common delimiters (`_`, `-`, and numpad `-`)
+    - The delimiter itself (if not listed above)
+    - Any keycodes specifically "excluded" by the user (see [Adding Excluded Keys](#adding-excluded-keys))
 2. Press the spacebar twice. The script will automatically delete the last trailing delimiter it added (e.g., `my_var_` followed by a space becomes `my_var `), and xcase is exited.
 
-### Adding Accepted Keys
-To add keys to the list of keys that won't trigger the end of xcase, locate the following `switch` block in `xcase.c`:
+### Adding Excluded Keys
+To add keys to the list of keys that won't trigger the end of xcase, use the `add_exclusion_keycode` function. For example, to prevent `.` from ending xcase, use:
 
 ```c
-    // Check if this key should continue xcase mode
-    switch (base_keycode) {
-        // Alphabetic keys
-        case KC_A ... KC_Z:
-        // Number row
-        case KC_1 ... KC_0:
-        // Keypad numbers
-        case KC_P1 ... KC_P0:
-        // common delimiters
-        case KC_UNDS:
-        case KC_MINS:
-        case KC_PMNS:
-        // Editing keys
-        case KC_BSPC:
-        case KC_DEL:
-        case KC_LEFT:
-        case KC_RIGHT:
-        // Shift keys
-        case KC_LSFT:
-        case KC_RSFT:
-        case OS_LSFT:
-        case OS_RSFT:
-        // misc
-        case KC_ALGR:  // alt gr
-            last_keycode = base_keycode;
-            return true;
-        
-        // exclude the delimiter key itself from ending xcase
-        default:
-            if (base_keycode == xcase_delimiter) {
-                last_keycode = base_keycode;
-                return true;
-            }
-            // Any other key terminates xcase
-            disable_xcase();
-            return true;
-    }
+add_exclusion_keycode(KC_DOT);  // this is the normal . key
+add_exclusion_keycode(KC_PDOT);  // this is the numpad . key
 ```
 
-If you want to keep xcase going after, for example, apostrophes and quotes, add `KC_QUOT` and `KC_DQUO` to the list of exceptions:
-```c
-    // Check if this key should continue xcase mode
-    switch (base_keycode) {
-        // ... other cases ...
-        case OS_RSFT:
-        // user-specified exceptions
-        case KC_QUOT:  // <--- add this to exclude ' from ending xcase
-        case KC_DQUO:  // <--- add this to exclude " from ending xcase
-        // misc
-        case KC_ALGR:  // alt gr
-            last_keycode = base_keycode;
-            return true;
-        
-        // ... default case ...
-    }
-```
 
 ## Functions
 These functions are automatically made available to your `keymap.c`.
@@ -195,3 +145,21 @@ Disables xcase. This is called automatically whenever a non-accepted keycode is 
 bool is_xcase_active(void);
 ```
 Returns true when xcase is active.
+
+### add_exclusion_keycode
+```c
+void add_exclusion_keycode(uint16_t keycode);
+```
+Adds the keycode to the list of keys that won't disable xcase. Accepts up to 16 entries.
+
+### remove_exclusion_keycode
+```c
+void remove_exclusion_keycode(uint16_t keycode);
+```
+Removes a keycode from the list of keys that won't disable xcase. Note that this can only be used to remove keycodes added by `add_exclusion_keycode`; it will not remove the hardcoded keys listed in [Exiting xcase](#exiting-xcase).
+
+### is_exclusion_keycode
+```c
+bool is_exclusion_keycode(uint16_t keycode);
+```
+Returns true if the keycode will allow xcase to continue.
