@@ -10,6 +10,10 @@ static bool xcase_active = false;
 static uint16_t xcase_delimiter = KC_UNDS;
 static uint16_t last_keycode = KC_NO;
 
+#define MAX_EXClUSION_KEYCODES 16
+static uint16_t exclusion_keycodes[MAX_EXClUSION_KEYCODES];
+static uint8_t exclusion_keycode_count = 0;
+
 
 // public functions
 void enable_xcase_with(uint16_t delimiter) {
@@ -38,6 +42,68 @@ void disable_xcase(void) {
 
 bool is_xcase_active(void) {
     return xcase_active;
+}
+
+
+void add_exclusion_keycode(uint16_t keycode) {
+    if (exclusion_keycode_count >= MAX_EXClUSION_KEYCODES) {
+        return;  // List is full
+    }
+    if (is_exclusion_keycode(keycode)) {
+        return;  // Already in list
+    }
+    exclusion_keycodes[exclusion_keycode_count++] = keycode;
+}
+
+
+void remove_exclusion_keycode(uint16_t keycode) {
+    for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
+        if (exclusion_keycodes[i] == keycode) {
+            // Shift remaining elements down
+            for (uint8_t j = i; j < exclusion_keycode_count - 1; j++) {
+                exclusion_keycodes[j] = exclusion_keycodes[j + 1];
+            }
+            exclusion_keycode_count--;
+            return;
+        }
+    }
+}
+
+
+bool is_exclusion_keycode(uint16_t keycode) {
+    switch (keycode) {
+        // alphanumeric keys
+        case KC_A ... KC_Z:
+        case KC_1 ... KC_0:
+        case KC_P1 ... KC_P0:
+        // common delimiters
+        case KC_UNDS:
+        case KC_MINS:
+        case KC_PMNS:
+        // editing keys
+        case KC_BSPC:
+        case KC_DEL:
+        case KC_LEFT:
+        case KC_RIGHT:
+        case KC_UP:
+        case KC_DOWN:
+        // modifier keys
+        case KC_LSFT:
+        case KC_RSFT:
+        case OS_LSFT:
+        case OS_RSFT:
+        case KC_ALGR:  // AltGr, also right Alt/Opt
+        case KC_LOPT:  // left Opt
+            return true;
+        default:
+            for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
+                if (exclusion_keycodes[i] == keycode) {
+                    return true;
+                }
+            return false;
+        }
+    }
+    return false;
 }
 
 
@@ -97,46 +163,12 @@ bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
         }
 
         // check if this key should continue xcase mode
-        switch (base_keycode) {
-            // Alphabetic keys
-            case KC_A ... KC_Z:
-            // Number row
-            case KC_1 ... KC_0:
-            // Keypad numbers
-            case KC_P1 ... KC_P0:
-            // common delimiters
-            case KC_UNDS:
-            case KC_MINS:
-            case KC_PMNS:
-            // Editing keys
-            case KC_BSPC:
-            case KC_DEL:
-            // navigation keys
-            case KC_LEFT:
-            case KC_RIGHT:
-            case KC_UP:
-            case KC_DOWN:
-            // Shift keys
-            case KC_LSFT:
-            case KC_RSFT:
-            case OS_LSFT:
-            case OS_RSFT:
-            // misc
-            case KC_LOPT:  // for macOS, Opt keys are used to make symbols
-            case KC_ALGR:  // AltGr key used to make intl characters
-                last_keycode = base_keycode;
-                return true;
-
-            // Delimiter key (dynamic)
-            default:
-                if (base_keycode == xcase_delimiter) {
-                    last_keycode = base_keycode;
-                    return true;
-                }
-                // Any other key terminates xcase
-                disable_xcase();
-                return true;
+        if (!is_exclusion_keycode(base_keycode)) {
+            disable_xcase();
+        } else {
+            last_keycode = base_keycode;
         }
+        return true;
     }
     return true;
 }
