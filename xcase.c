@@ -45,31 +45,6 @@ bool is_xcase_active(void) {
 }
 
 
-void add_exclusion_keycode(uint16_t keycode) {
-    if (exclusion_keycode_count >= MAX_EXClUSION_KEYCODES) {
-        return;  // List is full
-    }
-    if (is_exclusion_keycode(keycode)) {
-        return;  // Already in list
-    }
-    exclusion_keycodes[exclusion_keycode_count++] = keycode;
-}
-
-
-void remove_exclusion_keycode(uint16_t keycode) {
-    for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
-        if (exclusion_keycodes[i] == keycode) {
-            // Shift remaining elements down
-            for (uint8_t j = i; j < exclusion_keycode_count - 1; j++) {
-                exclusion_keycodes[j] = exclusion_keycodes[j + 1];
-            }
-            exclusion_keycode_count--;
-            return;
-        }
-    }
-}
-
-
 bool is_exclusion_keycode(uint16_t keycode) {
     switch (keycode) {
         // alphanumeric keys
@@ -104,6 +79,31 @@ bool is_exclusion_keycode(uint16_t keycode) {
         }
     }
     return false;
+}
+
+
+void add_exclusion_keycode(uint16_t keycode) {
+    if (exclusion_keycode_count >= MAX_EXClUSION_KEYCODES) {
+        return;  // List is full
+    }
+    if (is_exclusion_keycode(keycode)) {
+        return;  // Already in list
+    }
+    exclusion_keycodes[exclusion_keycode_count++] = keycode;
+}
+
+
+void remove_exclusion_keycode(uint16_t keycode) {
+    for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
+        if (exclusion_keycodes[i] == keycode) {
+            // Shift remaining elements down
+            for (uint8_t j = i; j < exclusion_keycode_count - 1; j++) {
+                exclusion_keycodes[j] = exclusion_keycodes[j + 1];
+            }
+            exclusion_keycode_count--;
+            return;
+        }
+    }
 }
 
 
