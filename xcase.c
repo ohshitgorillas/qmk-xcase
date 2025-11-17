@@ -75,10 +75,9 @@ bool is_exclusion_keycode(uint16_t keycode) {
                 if (exclusion_keycodes[i] == keycode) {
                     return true;
                 }
-            return false;
-        }
+            }
+        return false;
     }
-    return false;
 }
 
 
