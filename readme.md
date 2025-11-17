@@ -54,18 +54,18 @@ Call `enable_xcase_with(KC_<delimiter>)` from your keymap to activate the mode. 
 Leader key example:
 ```c
 void leader_end_user(void) {
-  // Leader, S, C for snake_case
-  if (leader_sequence_two_keys(KC_S, KC_C)) {
-    enable_xcase_with(KC_UNDS);
-  }
-  // Leader, K, C for kebab-case
-  else if (leader_sequence_two_keys(KC_K, KC_C)) {
-    enable_xcase_with(KC_MINS);
-  }
-  // Leader, C, C for camelCase
-  else if (leader_sequence_two_keys(KC_C, KC_C)) {
-    enable_xcase_with(OS_LSFT);
-  }
+    // Leader, S, C for snake_case
+    if (leader_sequence_two_keys(KC_S, KC_C)) {
+        enable_xcase_with(KC_UNDS);
+    }
+    // Leader, K, C for kebab-case
+    else if (leader_sequence_two_keys(KC_K, KC_C)) {
+        enable_xcase_with(KC_MINS);
+    }
+    // Leader, C, C for camelCase
+    else if (leader_sequence_two_keys(KC_C, KC_C)) {
+        enable_xcase_with(OS_LSFT);
+    }
 }
 ```
 For camelCase, you may pass KC_LSFT, KC_RSFT, OS_LSFT, or OS_RSFT. They all resolve to a one-shot left shift.
