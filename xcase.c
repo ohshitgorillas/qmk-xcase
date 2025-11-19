@@ -10,27 +10,54 @@ static bool xcase_active = false;
 static uint16_t xcase_delimiter = KC_UNDS;
 static uint16_t last_keycode = KC_NO;
 
-#define MAX_EXClUSION_KEYCODES 16
-static uint16_t exclusion_keycodes[MAX_EXClUSION_KEYCODES];
+#define MAX_EXCLUSION_KEYCODES 16
+static uint16_t exclusion_keycodes[MAX_EXCLUSION_KEYCODES];
 static uint8_t exclusion_keycode_count = 0;
 
 
 // public functions
 void enable_xcase_with(uint16_t delimiter) {
-    xcase_active = true;
-    last_keycode = KC_NO;
+
+    // ensure that only basic keycodes are used as delimiters
+    if (!IS_QK_BASIC(delimiter)) {
+        return;
+    }
 
     switch (delimiter) {
+        // camelCase
         case KC_LSFT:
         case KC_RSFT:
         case OS_LSFT:
         case OS_RSFT:
             xcase_delimiter = KC_LSFT;  // simplify shift to KC_LSFT for camelCase
             break;
+        // unacceptable delimiters
+        case KC_F1 ... KC_F24:
+        case KC_INTERNATIONAL_1 ... KC_LANGUAGE_9:
+        case KC_BSPC:
+        case KC_DEL:
+        case KC_LEFT:
+        case KC_RIGHT:
+        case KC_UP:
+        case KC_DOWN:
+        case KC_HOME:
+        case KC_END:
+        case KC_PAGE_UP:
+        case KC_PAGE_DOWN:
+        case KC_INSERT:
+        case KC_SPC:    // seriously?
+        case KC_SCRL ... KC_LSCR:  // lock keys
+        case KC_LCTL ... KC_RCMD:  // mods (shifts excepted above)
+        case KC_PSCR ... KC_EXSL:  // commands
+        case KC_PWR ... KC_LPAD:  // power and media keys
+            // some exclusions are probably redundant with !IS_QK_BASIC(keycode)
+            return;  // do not pass go, do not collect $200
         default:
             xcase_delimiter = delimiter;  // use the provided delimiter directly
             break;
-    }
+        }
+    last_keycode = KC_NO;
+    xcase_active = true;
 }
 
 
@@ -46,15 +73,36 @@ bool is_xcase_active(void) {
 
 
 bool is_exclusion_keycode(uint16_t keycode) {
+    // layer shifts and modifiers should not end xcase
+    if (IS_QK_MOMENTARY(keycode) ||      // MO(layer)
+        IS_QK_DEF_LAYER(keycode) ||      // DF(layer)
+        IS_QK_TOGGLE_LAYER(keycode) ||   // TG(layer)
+        IS_QK_ONE_SHOT_LAYER(keycode) || // OSL(layer)
+        IS_QK_TO(keycode) ||             // TO(layer)
+        IS_QK_LAYER_MOD(keycode) ||      // LM(layer, mod)
+        IS_QK_ONE_SHOT_MOD(keycode)      // OSM(mod)
+       ) {
+        return true;
+    }
+
+    // check if the keycode is in the user's exclusion list
+    for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
+        if (exclusion_keycodes[i] == keycode) {
+            return true;
+        }
+    }
+
     switch (keycode) {
         // alphanumeric keys
         case KC_A ... KC_Z:
         case KC_1 ... KC_0:
         case KC_P1 ... KC_P0:
+        // international language keys
+        case KC_INTERNATIONAL_1 ... KC_LANGUAGE_9:
         // common delimiters
         case KC_UNDS:
         case KC_MINS:
-        case KC_PMNS:
+        case KC_PMNS:  // numpad minus
         // editing keys
         case KC_BSPC:
         case KC_DEL:
@@ -65,24 +113,24 @@ bool is_exclusion_keycode(uint16_t keycode) {
         // modifier keys
         case KC_LSFT:
         case KC_RSFT:
-        case OS_LSFT:
-        case OS_RSFT:
-        case KC_ALGR:  // AltGr, also right Alt/Opt
-        case KC_LOPT:  // left Opt
+        case KC_LCTL:
+        case KC_RCTL:
+        case KC_LCMD:  // also Win/GUI
+        case KC_RCMD:  // also Win/GUI
+        case KC_ROPT:  // also RAlt, AltGr
+        case KC_LOPT:  // also LAlt
+        case KC_CAPS:
+        // the delimiter itself
+        case xcase_delimiter:
             return true;
         default:
-            for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
-                if (exclusion_keycodes[i] == keycode) {
-                    return true;
-                }
-            }
-        return false;
+            return false;
     }
 }
 
 
 void add_exclusion_keycode(uint16_t keycode) {
-    if (exclusion_keycode_count >= MAX_EXClUSION_KEYCODES) {
+    if (exclusion_keycode_count >= MAX_EXCLUSION_KEYCODES) {
         return;  // List is full
     }
     if (is_exclusion_keycode(keycode)) {
@@ -144,7 +192,9 @@ bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
         if (base_keycode == KC_SPC) {
             // check for double space to exit xcase mode
             if (last_keycode == KC_SPC) {
-                if (xcase_delimiter != KC_LSFT) {
+                if (xcase_delimiter != KC_LSFT &&
+                    xcase_delimiter != KC_CAPS)
+                {
                     tap_code(KC_BSPC); // remove the trailing delimiter for non-camelCase
                 }
                 disable_xcase();
