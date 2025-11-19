@@ -1,5 +1,5 @@
 # xcase: Dynamic Delimiters for QMK
-xcase is a QMK feature that dynamically replaces spaces with a chosen delimiter, allowing you to automatically type in snake_case, kebab-case, or camelCase without interrupting your workflow.
+xcase is a QMK feature that replaces spaces with a chosen delimiter, allowing you to automatically type in snake_case, kebab-case, camelCase, and more without interrupting your workflow.
 
 This was inspired by the "case modes" scripts at https://github.com/andrewjrae/kyria-keymap/tree/master, which are now out of date due to reliance on a custom Caps Word implementation. xcase, on the other hand, does not rely on Caps Word (which has since become a standard QMK feature) but rather simply captures and replaces spaces.
 
@@ -35,10 +35,10 @@ Compatible with layer-tap and mod-tap keys.
 3. Include a way to activate xcase in your `keymap.c` file.
 
 
-## How to Use
-There are two ways to activate xcase: using the built-in keycodes or by calling the function directly. The latter mode supports arbitrary delimiters.
+## How to Activate
+There are two ways to activate xcase: using the built-in keycodes or by calling the function within `keymap.c` directly. The former method supports snake, kebab, and camel cases; the latter supports arbitrary delimiters.
 
-Once active, type your variable name using the spacebar as you normally would. xcase will intercept the space and replace it with your chosen delimiter.
+Once active, type using the spacebar as you normally would. xcase will intercept the space and replace it with your chosen delimiter.
 
 
 ### Built-in Keycodes (easy)
@@ -49,7 +49,7 @@ Add the following keycodes to your layout in `keymap.c`:
 - `XCASE_OFF` [alias `XC_OFF`]: Deactivates xcase mode.
 
 ### Custom triggers (advanced)
-Call `enable_xcase_with(KC_<delimiter>)` from your keymap to activate the mode. This can be done via the Leader key (e.g., Leader, S, C for snake_case), custom keycodes, or other means.
+Call `enable_xcase_with(delimiter)` from `keymap.c` to activate the mode. This can be done via the Leader key (e.g., Leader, S, C for snake_case), custom macros, or other means.
 
 Leader key example:
 ```c
@@ -72,9 +72,9 @@ For camelCase, you may pass KC_LSFT, KC_RSFT, OS_LSFT, or OS_RSFT. They all reso
 
 
 ### Dynamic Delimiters
-This module may be used in conjunction with the Leader key to program dynamic, on-the—fly delimiters such as `.` or `/`.
+This module may be used to program dynamic, on-the-fly delimiters such `/` to/type/obnoxiously/long/file/paths. Youacanausealettersaasadelimitersatoo, orEVENcapsLOCKtoTYPElikeTHIS.
 
-In the example below, users may enter Leader, `x`, `c`, followed by any character to use that character as a delimiter.
+In the example below, users may enter Leader, `X`, `C`, followed by any character to use that character as a delimiter:
 ```c
 extern uint16_t leader_sequence[]; 
 
@@ -107,11 +107,11 @@ void leader_end_user(void) {
 The mode will terminate in one of two ways:
 1. Press any key that is not on the "excluded" list. The excluded keys are:
     - Alphanumeric (A-Z, 0-9)
-    - Either Shift (including one-shots)
-    - Either Alt/Opt (for use as Opt in macOS)
+    - Modifiers
+    - Layering keys
     - Backspace or Delete
     - Arrow keys
-    - Common delimiters (`_`, `-`, and numpad `-`)
+    - Common delimiters (`_`, `-`)
     - The delimiter itself (if not listed above)
     - Any keycodes specifically "excluded" by the user (see [Adding Excluded Keys](#adding-excluded-keys))
 2. Press the spacebar twice. The script will automatically delete the last trailing delimiter it added (e.g., `my_var_` followed by a space becomes `my_var `), and xcase is exited.
