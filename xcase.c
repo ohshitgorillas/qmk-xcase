@@ -22,6 +22,10 @@ static uint8_t exclusion_keycode_count = 0;
  * @param delimiter The keycode to use as a delimiter.
  */
 void enable_xcase_with(uint16_t delimiter) {
+    if (!IS_QK_BASIC(delimiter)) {
+        return;  // do not pass go, do not collect $200
+    }
+
     switch (delimiter) {
         // special handling for camelCase
         case KC_LSFT:
@@ -39,14 +43,14 @@ void enable_xcase_with(uint16_t delimiter) {
 #ifdef LAYER_LOCK_ENABLE // Ignore Layer Lock key.
         case QK_LAYER_LOCK:
 #endif
-        case !IS_QK_BASIC(delimiter):
         case KC_F1 ... KC_F24:
         case KC_INTERNATIONAL_1 ... KC_LANGUAGE_9:
         case KC_BACKSPACE:
         case KC_SPACE:             // ...seriously?
-        case KC_SCRL ... KC_LSCR:  // lock keys
-        case KC_LCTL ... KC_RCMD:  // mods (shifts excepted above)
-        case KC_PSCR ... KC_EXSL:  // commands
+        case KC_LCTL:
+        case KC_RCTL:
+        case KC_LCMD:
+        case KC_RCMD:
         case KC_PWR ... KC_LPAD:   // power and media keys
             return;  // do not pass go, do not collect $200
 
@@ -55,8 +59,10 @@ void enable_xcase_with(uint16_t delimiter) {
             xcase_delimiter = delimiter;
             break;
         }
+
     last_keycode = KC_NO;
     xcase_active = true;
+    add_xcase_exclusion_keycode(delimiter);
 }
 
 
@@ -90,6 +96,17 @@ bool is_xcase_exclusion_keycode(uint16_t keycode) {
         if (exclusion_keycodes[i] == keycode) {
             return true;
         }
+    }
+
+    if (IS_QK_MOMENTARY(keycode) ||
+        IS_QK_DEF_LAYER(keycode) ||
+        IS_QK_TOGGLE_LAYER(keycode) ||
+        IS_QK_ONE_SHOT_LAYER(keycode) ||
+        IS_QK_TO(keycode) ||
+        IS_QK_LAYER_MOD(keycode) ||
+        IS_QK_ONE_SHOT_MOD(keycode)
+    ) {
+        return true;
     }
 
     switch (keycode) {
@@ -126,16 +143,6 @@ bool is_xcase_exclusion_keycode(uint16_t keycode) {
         case KC_ROPT:  // also RAlt, AltGr
         case KC_LOPT:  // also LAlt
         case KC_CAPS:
-        // layering and one-shot modifier keys
-        case IS_QK_MOMENTARY(keycode):
-        case IS_QK_DEF_LAYER(keycode):
-        case IS_QK_TOGGLE_LAYER(keycode):
-        case IS_QK_ONE_SHOT_LAYER(keycode):
-        case IS_QK_TO(keycode):
-        case IS_QK_LAYER_MOD(keycode):
-        case IS_QK_ONE_SHOT_MOD(keycode):
-        // the delimiter itself
-        case xcase_delimiter:
             return true;
         default:
             return false;
