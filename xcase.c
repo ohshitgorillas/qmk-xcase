@@ -84,7 +84,7 @@ bool is_xcase_active(void) {
  * @param keycode The keycode to check.
  * @return True if the keycode is an exclusion, false otherwise.
  */
-bool is_exclusion_keycode(uint16_t keycode) {
+bool is_xcase_exclusion_keycode(uint16_t keycode) {
     // check if the keycode is in the user's exclusion list
     for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
         if (exclusion_keycodes[i] == keycode) {
@@ -147,11 +147,11 @@ bool is_exclusion_keycode(uint16_t keycode) {
  * @brief Add a keycode to the exclusion list.
  * @param keycode The keycode to add.
  */
-void add_exclusion_keycode(uint16_t keycode) {
+void add_xcase_exclusion_keycode(uint16_t keycode) {
     if (exclusion_keycode_count >= MAX_EXCLUSION_KEYCODES) {
         return;  // List is full
     }
-    if (is_exclusion_keycode(keycode)) {
+    if (is_xcase_exclusion_keycode(keycode)) {
         return;  // Already in list
     }
     exclusion_keycodes[exclusion_keycode_count++] = keycode;
@@ -162,7 +162,7 @@ void add_exclusion_keycode(uint16_t keycode) {
  * @brief Remove a keycode from the exclusion list.
  * @param keycode The keycode to remove.
  */
-void remove_exclusion_keycode(uint16_t keycode) {
+void remove_xcase_exclusion_keycode(uint16_t keycode) {
     for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
         if (exclusion_keycodes[i] == keycode) {
             // Shift remaining elements down
@@ -239,7 +239,7 @@ bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
         }
 
         // check if this key should continue xcase mode
-        if (!is_exclusion_keycode(base_keycode)) {
+        if (!is_xcase_exclusion_keycode(base_keycode)) {
             disable_xcase();
         } else {
             last_keycode = base_keycode;

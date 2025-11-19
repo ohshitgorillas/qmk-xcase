@@ -24,14 +24,14 @@ bool is_xcase_active(void);
  * (keys that will not trigger the end of xcase).
  * @param keycode The keycode to add.
  */
-void add_exclusion_keycode(uint16_t keycode);
+void add_xcase_exclusion_keycode(uint16_t keycode);
 
 /**
  * @brief Remove a keycode from the exclusion list
  * (keys that will not trigger the end of xcase).
  * @param keycode The keycode to remove.
  */
-void remove_exclusion_keycode(uint16_t keycode);
+void remove_xcase_exclusion_keycode(uint16_t keycode);
 
 /**
  * @brief Check if a keycode is on the user's exclusion list
@@ -39,7 +39,7 @@ void remove_exclusion_keycode(uint16_t keycode);
  * @param keycode The keycode to check.
  * @return True if the keycode is on the user's exclusion list, false otherwise.
  */
-bool is_exclusion_keycode(uint16_t keycode);
+bool is_xcase_exclusion_keycode(uint16_t keycode);
 
 /**
  * @brief Process a keypress with xcase.
