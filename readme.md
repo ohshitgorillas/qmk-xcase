@@ -117,11 +117,11 @@ The mode will terminate in one of two ways:
 2. Press the spacebar twice. The script will automatically delete the last trailing delimiter it added (e.g., `my_var_` followed by a space becomes `my_var `), and xcase is exited.
 
 ### Adding Excluded Keys
-To add keys to the list of keys that won't trigger the end of xcase, use the `add_exclusion_keycode` function. For example, to prevent `.` from ending xcase, use:
+To add keys to the list of keys that won't trigger the end of xcase, use the `add_xcase_exclusion_keycode` function. For example, to prevent `.` from ending xcase, use:
 
 ```c
-add_exclusion_keycode(KC_DOT);  // this is the normal . key
-add_exclusion_keycode(KC_PDOT);  // this is the numpad . key
+add_xcase_exclusion_keycode(KC_DOT);  // this is the normal . key
+add_xcase_exclusion_keycode(KC_PDOT);  // this is the numpad . key
 ```
 
 
@@ -146,20 +146,20 @@ bool is_xcase_active(void);
 ```
 Returns true when xcase is active.
 
-### add_exclusion_keycode
+### add_xcase_exclusion_keycode
 ```c
-void add_exclusion_keycode(uint16_t keycode);
+void add_xcase_exclusion_keycode(uint16_t keycode);
 ```
 Adds the keycode to the list of keys that won't disable xcase. Accepts up to 16 entries.
 
-### remove_exclusion_keycode
+### remove_xcase_exclusion_keycode
 ```c
-void remove_exclusion_keycode(uint16_t keycode);
+void remove_xcase_exclusion_keycode(uint16_t keycode);
 ```
-Removes a keycode from the list of keys that won't disable xcase. Note that this can only be used to remove keycodes added by `add_exclusion_keycode`; it will not remove the hardcoded keys listed in [Exiting xcase](#exiting-xcase).
+Removes a keycode from the list of keys that won't disable xcase. Note that this can only be used to remove keycodes added by `add_xcase_exclusion_keycode`; it will not remove the hardcoded keys listed in [Exiting xcase](#exiting-xcase).
 
-### is_exclusion_keycode
+### is_xcase_exclusion_keycode
 ```c
-bool is_exclusion_keycode(uint16_t keycode);
+bool is_xcase_exclusion_keycode(uint16_t keycode);
 ```
 Returns true if the keycode will allow xcase to continue.
