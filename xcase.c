@@ -16,44 +16,43 @@ static uint8_t exclusion_keycode_count = 0;
 
 
 // public functions
+
+/**
+ * @brief Enable xcase with a given delimiter.
+ * @param delimiter The keycode to use as a delimiter.
+ */
 void enable_xcase_with(uint16_t delimiter) {
-
-    // ensure that only basic keycodes are used as delimiters
-    if (!IS_QK_BASIC(delimiter)) {
-        return;
-    }
-
     switch (delimiter) {
-        // camelCase
+        // special handling for camelCase
         case KC_LSFT:
         case KC_RSFT:
         case OS_LSFT:
         case OS_RSFT:
-            xcase_delimiter = KC_LSFT;  // simplify shift to KC_LSFT for camelCase
+            // simplify shifts to KC_LSFT
+            xcase_delimiter = KC_LSFT;
             break;
+
         // unacceptable delimiters
+#ifdef TRI_LAYER_ENABLE // Ignore Tri Layer keys.
+        case QK_TRI_LAYER_LOWER ... QK_TRI_LAYER_UPPER:
+#endif
+#ifdef LAYER_LOCK_ENABLE // Ignore Layer Lock key.
+        case QK_LAYER_LOCK:
+#endif
+        case !IS_QK_BASIC(delimiter):
         case KC_F1 ... KC_F24:
         case KC_INTERNATIONAL_1 ... KC_LANGUAGE_9:
-        case KC_BSPC:
-        case KC_DEL:
-        case KC_LEFT:
-        case KC_RIGHT:
-        case KC_UP:
-        case KC_DOWN:
-        case KC_HOME:
-        case KC_END:
-        case KC_PAGE_UP:
-        case KC_PAGE_DOWN:
-        case KC_INSERT:
-        case KC_SPC:    // seriously?
+        case KC_BACKSPACE:
+        case KC_SPACE:             // ...seriously?
         case KC_SCRL ... KC_LSCR:  // lock keys
         case KC_LCTL ... KC_RCMD:  // mods (shifts excepted above)
         case KC_PSCR ... KC_EXSL:  // commands
-        case KC_PWR ... KC_LPAD:  // power and media keys
-            // some exclusions are probably redundant with !IS_QK_BASIC(keycode)
+        case KC_PWR ... KC_LPAD:   // power and media keys
             return;  // do not pass go, do not collect $200
+
+        // use the provided delimiter directly
         default:
-            xcase_delimiter = delimiter;  // use the provided delimiter directly
+            xcase_delimiter = delimiter;
             break;
         }
     last_keycode = KC_NO;
@@ -61,30 +60,31 @@ void enable_xcase_with(uint16_t delimiter) {
 }
 
 
+/**
+ * @brief Disable xcase.
+ */
 void disable_xcase(void) {
     xcase_active = false;
     last_keycode = KC_NO;
 }
 
 
+/**
+ * @brief Check if xcase is active.
+ * @return True if xcase is active, false otherwise.
+ */
 bool is_xcase_active(void) {
     return xcase_active;
 }
 
 
+/**
+ * @brief Check if a keycode is an exclusion.
+ * Exclusions are keycodes that will not trigger the end of xcase.
+ * @param keycode The keycode to check.
+ * @return True if the keycode is an exclusion, false otherwise.
+ */
 bool is_exclusion_keycode(uint16_t keycode) {
-    // layer shifts and modifiers should not end xcase
-    if (IS_QK_MOMENTARY(keycode) ||      // MO(layer)
-        IS_QK_DEF_LAYER(keycode) ||      // DF(layer)
-        IS_QK_TOGGLE_LAYER(keycode) ||   // TG(layer)
-        IS_QK_ONE_SHOT_LAYER(keycode) || // OSL(layer)
-        IS_QK_TO(keycode) ||             // TO(layer)
-        IS_QK_LAYER_MOD(keycode) ||      // LM(layer, mod)
-        IS_QK_ONE_SHOT_MOD(keycode)      // OSM(mod)
-       ) {
-        return true;
-    }
-
     // check if the keycode is in the user's exclusion list
     for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
         if (exclusion_keycodes[i] == keycode) {
@@ -93,6 +93,12 @@ bool is_exclusion_keycode(uint16_t keycode) {
     }
 
     switch (keycode) {
+#ifdef TRI_LAYER_ENABLE // Ignore Tri Layer keys.
+        case QK_TRI_LAYER_LOWER ... QK_TRI_LAYER_UPPER:
+#endif
+#ifdef LAYER_LOCK_ENABLE // Ignore Layer Lock key.
+        case QK_LAYER_LOCK:
+#endif
         // alphanumeric keys
         case KC_A ... KC_Z:
         case KC_1 ... KC_0:
@@ -120,6 +126,14 @@ bool is_exclusion_keycode(uint16_t keycode) {
         case KC_ROPT:  // also RAlt, AltGr
         case KC_LOPT:  // also LAlt
         case KC_CAPS:
+        // layering and one-shot modifier keys
+        case IS_QK_MOMENTARY(keycode):
+        case IS_QK_DEF_LAYER(keycode):
+        case IS_QK_TOGGLE_LAYER(keycode):
+        case IS_QK_ONE_SHOT_LAYER(keycode):
+        case IS_QK_TO(keycode):
+        case IS_QK_LAYER_MOD(keycode):
+        case IS_QK_ONE_SHOT_MOD(keycode):
         // the delimiter itself
         case xcase_delimiter:
             return true;
@@ -129,6 +143,10 @@ bool is_exclusion_keycode(uint16_t keycode) {
 }
 
 
+/**
+ * @brief Add a keycode to the exclusion list.
+ * @param keycode The keycode to add.
+ */
 void add_exclusion_keycode(uint16_t keycode) {
     if (exclusion_keycode_count >= MAX_EXCLUSION_KEYCODES) {
         return;  // List is full
@@ -140,6 +158,10 @@ void add_exclusion_keycode(uint16_t keycode) {
 }
 
 
+/**
+ * @brief Remove a keycode from the exclusion list.
+ * @param keycode The keycode to remove.
+ */
 void remove_exclusion_keycode(uint16_t keycode) {
     for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
         if (exclusion_keycodes[i] == keycode) {
@@ -154,7 +176,12 @@ void remove_exclusion_keycode(uint16_t keycode) {
 }
 
 
-// main function
+/**
+ * @brief Process a keypress with xcase.
+ * @param keycode The keycode of the keypress.
+ * @param record The keyrecord to process.
+ * @return True if the keypress is returned to the caller, false otherwise.
+ */
 bool process_record_xcase(uint16_t keycode, keyrecord_t *record) {
     // Handle activation/deactivation keycodes first
     if (record->event.pressed) {
