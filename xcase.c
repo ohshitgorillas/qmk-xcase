@@ -18,68 +18,10 @@ static uint8_t exclusion_keycode_count = 0;
 // public functions
 
 /**
- * @brief Enable xcase with a given delimiter.
- * @param delimiter The keycode to use as a delimiter.
- */
-void enable_xcase_with(uint16_t delimiter) {
-    if (!IS_QK_BASIC(delimiter)) {
-        return;  // do not pass go, do not collect $200
-    }
-
-    switch (delimiter) {
-        // special handling for camelCase
-        case KC_LSFT:
-        case KC_RSFT:
-        case OS_LSFT:
-        case OS_RSFT:
-            // simplify shifts to KC_LSFT
-            xcase_delimiter = KC_LSFT;
-            break;
-
-        // unacceptable delimiters
-#ifdef TRI_LAYER_ENABLE // Ignore Tri Layer keys.
-        case QK_TRI_LAYER_LOWER ... QK_TRI_LAYER_UPPER:
-#endif
-#ifdef LAYER_LOCK_ENABLE // Ignore Layer Lock key.
-        case QK_LAYER_LOCK:
-#endif
-        case KC_F1 ... KC_F24:
-        case KC_INTERNATIONAL_1 ... KC_LANGUAGE_9:
-        case KC_BACKSPACE:
-        case KC_SPACE:             // ...seriously?
-        case KC_LCTL:
-        case KC_RCTL:
-        case KC_LCMD:
-        case KC_RCMD:
-        case KC_PWR ... KC_LPAD:   // power and media keys
-            return;  // do not pass go, do not collect $200
-
-        // use the provided delimiter directly
-        default:
-            xcase_delimiter = delimiter;
-            break;
-        }
-
-    last_keycode = KC_NO;
-    xcase_active = true;
-    add_xcase_exclusion_keycode(delimiter);
-}
-
-
-/**
- * @brief Disable xcase.
- */
-void disable_xcase(void) {
-    xcase_active = false;
-    last_keycode = KC_NO;
-}
-
-
-/**
  * @brief Check if xcase is active.
  * @return True if xcase is active, false otherwise.
  */
-bool is_xcase_active(void) {
+ bool is_xcase_active(void) {
     return xcase_active;
 }
 
@@ -91,13 +33,14 @@ bool is_xcase_active(void) {
  * @return True if the keycode is an exclusion, false otherwise.
  */
 bool is_xcase_exclusion_keycode(uint16_t keycode) {
-    // check if the keycode is in the user's exclusion list
+    // pass keycodes on the user's exclusion list
     for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
         if (exclusion_keycodes[i] == keycode) {
             return true;
         }
     }
 
+    // pass layering keys and one-shot mods
     if (IS_QK_MOMENTARY(keycode) ||
         IS_QK_DEF_LAYER(keycode) ||
         IS_QK_TOGGLE_LAYER(keycode) ||
@@ -118,32 +61,39 @@ bool is_xcase_exclusion_keycode(uint16_t keycode) {
 #endif
         // alphanumeric keys
         case KC_A ... KC_Z:
-        case KC_1 ... KC_0:
         case KC_P1 ... KC_P0:
         // international language keys
         case KC_INTERNATIONAL_1 ... KC_LANGUAGE_9:
         // common delimiters
-        case KC_UNDS:
-        case KC_MINS:
-        case KC_PMNS:  // numpad minus
+        case KC_UNDERSCORE:
+        case KC_MINUS:
+        case KC_KP_MINUS:
         // editing keys
-        case KC_BSPC:
-        case KC_DEL:
+        case KC_BACKSPACE:
+        case KC_DELETE:
         case KC_LEFT:
         case KC_RIGHT:
         case KC_UP:
         case KC_DOWN:
         // modifier keys
-        case KC_LSFT:
-        case KC_RSFT:
-        case KC_LCTL:
-        case KC_RCTL:
-        case KC_LCMD:  // also Win/GUI
-        case KC_RCMD:  // also Win/GUI
-        case KC_ROPT:  // also RAlt, AltGr
-        case KC_LOPT:  // also LAlt
+        case KC_LEFT_SHIFT:
+        case KC_RIGHT_SHIFT:
+        case KC_LEFT_CTRL:
+        case KC_RIGHT_CTRL:
+        case KC_LEFT_GUI:
+        case KC_RIGHT_GUI:
+        case KC_RIGHT_ALT:
+        case KC_LEFT_ALT:
         case KC_CAPS:
             return true;
+        case KC_1 ... KC_0:
+            if ((get_mods()|get_oneshot_mods()|get_weak_mods()) & MOD_MASK_SHIFT) {
+                // do not pass symbols like !@#$ through
+                return false;
+            } else {
+                // do pass unshifted numbers through
+                return true;
+            }
         default:
             return false;
     }
@@ -154,7 +104,7 @@ bool is_xcase_exclusion_keycode(uint16_t keycode) {
  * @brief Add a keycode to the exclusion list.
  * @param keycode The keycode to add.
  */
-void add_xcase_exclusion_keycode(uint16_t keycode) {
+ void add_xcase_exclusion_keycode(uint16_t keycode) {
     if (exclusion_keycode_count >= MAX_EXCLUSION_KEYCODES) {
         return;  // List is full
     }
@@ -169,7 +119,7 @@ void add_xcase_exclusion_keycode(uint16_t keycode) {
  * @brief Remove a keycode from the exclusion list.
  * @param keycode The keycode to remove.
  */
-void remove_xcase_exclusion_keycode(uint16_t keycode) {
+ void remove_xcase_exclusion_keycode(uint16_t keycode) {
     for (uint8_t i = 0; i < exclusion_keycode_count; i++) {
         if (exclusion_keycodes[i] == keycode) {
             // Shift remaining elements down
@@ -180,6 +130,93 @@ void remove_xcase_exclusion_keycode(uint16_t keycode) {
             return;
         }
     }
+}
+
+
+/**
+ * @brief Enable xcase with a given delimiter.
+ * @param delimiter The keycode to use as a delimiter.
+ */
+void enable_xcase_with(uint16_t delimiter) {
+    // 1. Analyze Modifiers
+    // Extract the high bits (modifiers) from the keycode
+    uint16_t mods = delimiter & ~0xFF;
+
+    // Check if the modifiers are "Visual" (Shift, Option, or Shift+Option)
+    // QK_LALT = Left Option (Mac)
+    // QK_RALT = Right Option (Mac)
+    // QK_LSFT = Shift
+    bool is_visual_mod = (mods == QK_LSFT) ||
+                         (mods == QK_LALT) ||
+                         (mods == QK_RALT) ||           // also AltGr
+                         (mods == (QK_LSFT | QK_LALT)); // Shift+Opt (e.g. )
+
+    // 2. Rejection Logic: Stage 1
+    // If it's NOT a basic key AND it doesn't have valid visual modifiers, reject it.
+    if (!IS_QK_BASIC(delimiter) && !is_visual_mod) {
+        return;
+    }
+
+    // 2. Rejection Logic: Stage 2
+    // Specific keycode rejections and handling
+    switch (delimiter) {
+        // special handling for camelCase
+        case KC_LSFT:
+        case KC_RSFT:
+        case OS_LSFT:
+        case OS_RSFT:
+            // simplify shifts to KC_LSFT
+            xcase_delimiter = KC_LSFT;
+            break;
+
+        // unacceptable delimiters
+#ifdef TRI_LAYER_ENABLE // Ignore Tri Layer keys.
+        case QK_TRI_LAYER_LOWER ... QK_TRI_LAYER_UPPER:
+#endif
+#ifdef LAYER_LOCK_ENABLE // Ignore Layer Lock key.
+        case QK_LAYER_LOCK:
+#endif
+        case KC_NO:
+        case KC_F1 ... KC_F12:
+        case KC_F13 ... KC_LPAD:
+        case KC_BACKSPACE:
+        case KC_DEL:
+        case KC_HOME:
+        case KC_END:
+        case KC_PGUP:
+        case KC_PGDN:
+        case KC_PSCR:
+        case KC_SCRL:
+        case KC_PAUS:
+        case KC_INS:
+        case KC_NUM:
+        case KC_ESC:
+        case KC_LCTL:
+        case KC_RCTL:
+        case KC_LCMD:
+        case KC_RCMD:
+        case KC_SPACE:  // ...seriously?
+            return;  // do not pass go, do not col-lect $200
+
+        // use the provided delimiter directly
+        default:
+            xcase_delimiter = delimiter;
+            break;
+        }
+
+    last_keycode = KC_NO;
+    xcase_active = true;
+    add_xcase_exclusion_keycode(delimiter);
+}
+
+
+/**
+ * @brief Disable xcase.
+ */
+void disable_xcase(void) {
+    xcase_active = false;
+    last_keycode = KC_NO;
+    remove_xcase_exclusion_keycode(xcase_delimiter);
 }
 
 
